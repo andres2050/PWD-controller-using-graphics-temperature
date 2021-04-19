@@ -3,6 +3,6 @@
   "MIN_TEMP": 45,
   "MIN_FAN": 20,
   "MAX_FAN": 100,
-  "ARDUINO_PORT": "/dev/ttyACM0",
+  "ARDUINO_PORT": "COM3",
   "ARDUINO_FREQ": 9600
 }

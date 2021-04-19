@@ -1,20 +1,15 @@
 from time import sleep
 from serial import Serial
-from pynvml import *
+import nvsmi
 import json
+import struct
 
 
 def nvidia_max_temp():
-    nvmlInit()
-
-    device_count = nvmlDeviceGetCount()
     nvidia_temps = []
 
-    for i in range(device_count):
-        handle = nvmlDeviceGetHandleByIndex(i)
-        nvidia_temps.append(nvmlDeviceGetTemperature(handle, NVML_TEMPERATURE_GPU))
-
-    nvmlShutdown()
+    for gpu in nvsmi.get_gpus():
+        nvidia_temps.append(gpu.temperature)
 
     return max(nvidia_temps)
 
@@ -32,16 +27,20 @@ if __name__ == '__main__':
 
         temp_max = max([nvidia_max_temp(), amd_max_temp()])
         if temp_max < configs["MIN_TEMP"]:
-            arduino.write(0)
+            arduino.write(struct.pack('>B', 0))
+            print("new value", temp_max, 0)
         elif temp_max > configs["MAX_TEMP"]:
-            arduino.write(100)
+            arduino.write(struct.pack('>B', 100))
+            print("new value", temp_max, 100)
         else:
             m = (configs["MAX_FAN"] - configs["MIN_FAN"]) / (configs["MAX_TEMP"] - configs["MIN_TEMP"])
             b = configs["MIN_FAN"] - (m * configs["MIN_TEMP"])
             fan_speed = (m * temp_max) + b
 
-            arduino.write(int(fan_speed))
+            arduino.write(struct.pack('>B', int(fan_speed)))
+            print("new value", temp_max, fan_speed)
 
-        print("new value", temp_max, fan_speed)
+        print(arduino.readline())
+
         arduino.close()
         sleep(15)
